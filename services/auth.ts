@@ -4,7 +4,7 @@ import { UserRole, Profile } from '@/types/auth'
 const supabase = createClient()
 
 export const authService = {
-  async signUp(email: string, password: string, fullName: string, role: UserRole) {
+  async signUp(email: string, password: string, fullName: string, role: UserRole, managerId?: string) {
     // 1. Sign up the user in Supabase Auth
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
@@ -22,6 +22,7 @@ export const authService = {
         full_name: fullName,
         email: email,
         role: role,
+        manager_id: managerId || null,
       })
 
     if (profileError) {
@@ -31,6 +32,20 @@ export const authService = {
     }
 
     return authData.user
+  },
+
+  async getManagers(): Promise<{ id: string; full_name: string }[]> {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id, full_name')
+      .eq('role', 'manager')
+
+    if (error) {
+      console.error('Error fetching managers:', error)
+      return []
+    }
+
+    return data || []
   },
 
   async signIn(email: string, password: string) {

@@ -13,8 +13,12 @@ export interface Goal {
   status: GoalStatus;
   locked: boolean;
   manager_id?: string;
+  rework_comments?: string;
   created_at: string;
   updated_at: string;
+  shared_goal_id?: string | null;
+  is_shared?: boolean;
+  is_primary_owner?: boolean;
 }
 
 export interface GoalFormData {
@@ -24,4 +28,8 @@ export interface GoalFormData {
   target: string;
   thrust_area: string;
   uom_type: UOMType;
+  shared_goal_id?: string | null;
+  is_shared?: boolean;
+  is_primary_owner?: boolean;
 }
+

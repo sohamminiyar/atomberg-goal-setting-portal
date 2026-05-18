@@ -29,6 +29,9 @@ export const goalService = {
         uom_type: goal.uom_type,
         status: 'draft', // Any edit resets it to draft unless submitted
         updated_at: new Date().toISOString(),
+        shared_goal_id: goal.shared_goal_id !== undefined ? goal.shared_goal_id : null,
+        is_shared: goal.is_shared !== undefined ? goal.is_shared : false,
+        is_primary_owner: goal.is_primary_owner !== undefined ? goal.is_primary_owner : false,
       })
       .select()
       .single()
@@ -42,7 +45,7 @@ export const goalService = {
       .from('goals')
       .delete()
       .eq('id', goalId)
-      .eq('status', 'draft') // Only allow deleting drafts
+      .in('status', ['draft', 'rework_requested'])
 
     if (error) throw error
   },

@@ -4,6 +4,8 @@ import { Suspense } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Plus, LayoutDashboard, Target } from 'lucide-react'
+import GoalRoster from '@/components/employee/GoalRoster'
+import { Goal } from '@/types/goals'
 
 async function DashboardContent() {
   const supabase = await createClient()
@@ -13,76 +15,127 @@ async function DashboardContent() {
     redirect('/login')
   }
 
-  // Fetch goal stats
-  const { data: goals } = await supabase
+  // Fetch all employee goals
+  const { data: goalsData } = await supabase
     .from('goals')
-    .select('status')
+    .select('*')
     .eq('employee_id', user.id)
+    .order('created_at', { ascending: true })
+
+  const goals = (goalsData || []) as Goal[]
 
   const stats = {
-    total: goals?.length || 0,
-    approved: goals?.filter(g => g.status === 'approved').length || 0,
-    pending: goals?.filter(g => g.status === 'pending_approval').length || 0,
+    total: goals.length,
+    approved: goals.filter(g => g.status === 'approved').length,
+    pending: goals.filter(g => g.status === 'pending_approval').length,
   }
 
   return (
     <div className="space-y-6">
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+      {/* Top Banner Stats Block */}
+      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h2 className="text-xl font-semibold text-slate-900">Goal Overview</h2>
-            <p className="text-sm text-slate-500">Track your performance targets for the current cycle.</p>
+            <h2 className="text-xl font-bold text-slate-800">Goal Overview</h2>
+            <p className="text-xs text-slate-500 mt-1">Track your performance targets and review approval workflows.</p>
           </div>
           <Link href="/employee/goals/new">
-            <Button className="bg-blue-600 hover:bg-blue-700 shadow-sm transition-all hover:scale-[1.02]">
+            <Button className="bg-[#00288e] hover:bg-[#001f66] font-bold text-white shadow-sm transition-all hover:scale-[1.02] rounded-xl">
               <Plus className="w-4 h-4 mr-2" />
               Set Goals
             </Button>
           </Link>
         </div>
         
+        {/* Core metrics grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="p-4 bg-blue-50 border border-blue-100 rounded-md transition-all hover:shadow-md">
+          <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl transition-all hover:shadow-md">
             <div className="flex items-center gap-3 mb-2">
               <div className="p-2 bg-blue-100 rounded-lg">
                 <Target className="w-4 h-4 text-blue-600" />
               </div>
-              <h3 className="font-semibold text-blue-900">Total Goals</h3>
+              <h3 className="text-sm font-semibold text-blue-900">Total Goals</h3>
             </div>
-            <p className="text-3xl font-bold text-blue-600">{stats.total}</p>
+            <p className="text-3xl font-extrabold text-blue-600">{stats.total}</p>
           </div>
-          <div className="p-4 bg-green-50 border border-green-100 rounded-md transition-all hover:shadow-md">
+
+          <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-xl transition-all hover:shadow-md">
             <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <LayoutDashboard className="w-4 h-4 text-green-600" />
+              <div className="p-2 bg-emerald-100 rounded-lg">
+                <CheckCircle2Icon className="w-4 h-4 text-emerald-600" />
               </div>
-              <h3 className="font-semibold text-green-900">Approved</h3>
+              <h3 className="text-sm font-semibold text-emerald-900">Approved & Locked</h3>
             </div>
-            <p className="text-3xl font-bold text-green-600">{stats.approved}</p>
+            <p className="text-3xl font-extrabold text-emerald-600">{stats.approved}</p>
           </div>
-          <div className="p-4 bg-yellow-50 border border-yellow-100 rounded-md transition-all hover:shadow-md">
+
+          <div className="p-4 bg-amber-50 border border-amber-100 rounded-xl transition-all hover:shadow-md">
             <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 bg-yellow-100 rounded-lg">
-                <LayoutDashboard className="w-4 h-4 text-yellow-600" />
+              <div className="p-2 bg-amber-100 rounded-lg">
+                <ClockIcon className="w-4 h-4 text-amber-600" />
               </div>
-              <h3 className="font-semibold text-yellow-900">Pending</h3>
+              <h3 className="text-sm font-semibold text-amber-900">Pending Review</h3>
             </div>
-            <p className="text-3xl font-bold text-yellow-600">{stats.pending}</p>
+            <p className="text-3xl font-extrabold text-amber-600">{stats.pending}</p>
           </div>
         </div>
       </div>
+
+      {/* Dynamic FY 2026 Goal Roster Card */}
+      <GoalRoster initialGoals={goals} employeeId={user.id} />
     </div>
+  )
+}
+
+// Simple fallback components for metrics block
+function CheckCircle2Icon(props: any) {
+  return (
+    <svg
+      {...props}
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="12" r="10" />
+      <path d="m9 12 2 2 4-4" />
+    </svg>
+  )
+}
+
+function ClockIcon(props: any) {
+  return (
+    <svg
+      {...props}
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="12" r="10" />
+      <polyline points="12 6 12 12 16 14" />
+    </svg>
   )
 }
 
 export default function EmployeeDashboard() {
   return (
-    <div className="p-8 max-w-7xl mx-auto">
-      <div className="flex items-center gap-2 mb-8">
+    <div className="p-8 max-w-7xl mx-auto space-y-8">
+      <div className="flex items-center gap-2.5">
         <LayoutDashboard className="w-8 h-8 text-blue-600" />
-        <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Employee Dashboard</h1>
+        <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">Employee Dashboard</h1>
       </div>
-      <Suspense fallback={<div className="h-64 w-full bg-slate-100 animate-pulse rounded-lg border border-slate-200" />}>
+      <Suspense fallback={<div className="h-96 w-full bg-slate-100 animate-pulse rounded-2xl border border-slate-200" />}>
         <DashboardContent />
       </Suspense>
     </div>

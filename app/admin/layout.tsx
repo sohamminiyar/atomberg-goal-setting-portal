@@ -1,8 +1,34 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { authService } from '@/services/auth'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
+import NotificationDropdown from '@/components/NotificationDropdown'
+import { 
+  LayoutDashboard, 
+  Users, 
+  Network, 
+  Target, 
+  BarChart3, 
+  History, 
+  LogOut,
+  Menu,
+  Search,
+  Settings
+} from 'lucide-react'
+
+const sidebarItems = [
+  { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
+  { name: 'User Management', href: '/admin/users', icon: Users },
+  { name: 'Hierarchy Workspace', href: '/admin/hierarchy', icon: Network },
+  { name: 'Goal Governance', href: '/admin/goals', icon: Target },
+  { name: 'Shared Goals', href: '/admin/shared-goals', icon: Network },
+  { name: 'Reports & Analytics', href: '/admin/reports', icon: BarChart3 },
+  { name: 'Audit Logs', href: '/admin/audit-logs', icon: History },
+]
 
 export default function AdminLayout({
   children,
@@ -10,29 +36,186 @@ export default function AdminLayout({
   children: React.ReactNode
 }) {
   const router = useRouter()
+  const pathname = usePathname()
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
+  const [isProfileOpen, setIsProfileOpen] = useState(false)
+  const [profile, setProfile] = useState<{ id: string; full_name: string; email: string } | null>(null)
+
+  useEffect(() => {
+    async function fetchProfile() {
+      try {
+        const user = await authService.getCurrentUser()
+        if (user) {
+          const prof = await authService.getUserProfile(user.id)
+          if (prof) {
+            setProfile({
+              id: prof.id,
+              full_name: prof.full_name || 'Admin User',
+              email: prof.email || user.email || ''
+            })
+          } else {
+            setProfile({
+              id: user.id,
+              full_name: 'Admin Account',
+              email: user.email || 'admin@test.com'
+            })
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching profile:', err)
+      }
+    }
+    fetchProfile()
+  }, [])
 
   const handleLogout = async () => {
     await authService.signOut()
     router.push('/login')
   }
 
+  const getInitials = () => {
+    if (!profile?.full_name) return 'A'
+    return profile.full_name
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2)
+  }
+
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50">
-      <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-blue-600 rounded-md flex items-center justify-center text-white font-bold">A</div>
-          <span className="font-bold text-slate-900 tracking-tight">Atomberg Goals</span>
-          <span className="ml-4 px-2 py-0.5 bg-rose-100 text-rose-700 text-xs font-medium rounded">Admin</span>
-        </div>
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" onClick={handleLogout}>
-            Logout
+    <div className="h-screen w-screen bg-slate-50 flex overflow-hidden">
+      {/* Full-Height Collapsible Left Sidebar */}
+      <aside 
+        className={cn(
+          "bg-white border-r border-slate-200 flex flex-col h-full z-40 transition-all duration-300 ease-in-out flex-shrink-0 pt-4",
+          isSidebarOpen ? "w-56" : "w-16"
+        )}
+      >
+        {/* Hamburger Menu Toggle inside Sidebar */}
+        <div className={cn("mb-5 flex", isSidebarOpen ? "px-4 justify-start" : "px-0 justify-center")}>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            className="text-slate-500 hover:bg-slate-100 h-9 w-9 rounded-lg flex items-center justify-center"
+          >
+            <Menu className="w-5 h-5" />
           </Button>
         </div>
-      </header>
-      <main className="flex-1 overflow-auto">
-        {children}
-      </main>
+
+        {/* Navigation Sidebar Options */}
+        <nav className={cn("flex-1 space-y-1", isSidebarOpen ? "px-4" : "px-2")}>
+          {sidebarItems.map((item) => {
+            const isActive = pathname === item.href
+            return (
+              <Link key={item.name} href={item.href}>
+                <div className={cn(
+                  "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group relative cursor-pointer",
+                  isActive 
+                    ? "bg-blue-50 text-blue-600 font-semibold" 
+                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                )}>
+                  <item.icon className={cn("w-5 h-5 flex-shrink-0", isActive ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600")} />
+                  {isSidebarOpen && <span className="text-xs truncate">{item.name}</span>}
+                  {!isSidebarOpen && (
+                    <div className="absolute left-14 bg-slate-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
+                      {item.name}
+                    </div>
+                  )}
+                </div>
+              </Link>
+            )
+          })}
+        </nav>
+      </aside>
+
+      {/* Right Content Workspace */}
+      <div className="flex-1 flex flex-col h-full overflow-hidden">
+        {/* Fixed Top Navigation Bar */}
+        <header className="h-16 bg-white border-b border-slate-200 flex-shrink-0 px-6 sm:px-8 flex justify-between items-center z-30 shadow-sm">
+          {/* Top Left: Atomberg Brand Logo */}
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-sm">
+              <span className="text-white font-bold">A</span>
+            </div>
+            <span className="text-lg font-bold text-slate-800 tracking-tight">Atomberg</span>
+            <div className="h-4 w-px bg-slate-200 mx-2 hidden sm:block"></div>
+            <span className="text-sm font-medium text-slate-400 hidden sm:block">Goal Setting Portal (Admin)</span>
+          </div>
+
+          {/* Top Right: Action Icons */}
+          <div className="flex items-center gap-5">
+            {/* Search Bar */}
+            <div className="relative hidden md:block">
+              <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400 pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Search..."
+                className="pl-9 pr-4 py-1.5 text-xs border border-slate-200 rounded-lg bg-slate-50/50 text-[#151c27] focus:outline-none focus:border-[#00288e] focus:ring-1 focus:ring-[#00288e] transition-all placeholder:text-slate-400 w-48"
+              />
+            </div>
+
+            {/* History Icon */}
+            <Link href="/admin/audit-logs">
+              <button className="p-2 text-slate-500 hover:text-[#00288e] hover:bg-slate-50 rounded-lg transition-colors group relative">
+                <History className="w-5 h-5" />
+                <div className="absolute right-0 top-10 bg-slate-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
+                  Audit Logs
+                </div>
+              </button>
+            </Link>
+
+            {/* Notification Dropdown Bell Icon */}
+            {profile?.id && (
+              <NotificationDropdown currentUserId={profile.id} role="admin" />
+            )}
+
+            {/* Divider */}
+            <div className="h-6 w-px bg-slate-200"></div>
+
+            {/* Account Profile Dropdown */}
+            <div className="relative">
+              <button 
+                onClick={() => setIsProfileOpen(!isProfileOpen)}
+                onBlur={() => setTimeout(() => setIsProfileOpen(false), 200)}
+                className="w-9 h-9 rounded-full border border-slate-200 flex items-center justify-center bg-blue-50 text-[#00288e] hover:bg-[#00288e] hover:text-white transition-all font-bold text-sm shadow-sm hover:scale-105 active:scale-95"
+              >
+                {getInitials()}
+              </button>
+              
+              {isProfileOpen && (
+                <div className="absolute right-0 mt-3 w-48 bg-white border border-slate-200 rounded-xl shadow-lg z-50 py-1.5 animate-in fade-in slide-in-from-top-2 duration-150">
+                  <div className="px-4 py-2 border-b border-slate-100">
+                    <p className="text-xs font-bold text-slate-800 truncate">{profile?.full_name || 'Admin User'}</p>
+                    <p className="text-[10px] text-slate-400 truncate mt-0.5">{profile?.email || 'admin@test.com'}</p>
+                  </div>
+                  
+                  <Link href="/admin/dashboard" className="block w-full">
+                    <button className="w-full text-left px-4 py-2 text-xs text-slate-600 hover:text-blue-600 hover:bg-slate-50 transition-colors font-semibold flex items-center gap-2">
+                      <Settings className="w-4 h-4 text-slate-400" />
+                      Dashboard Settings
+                    </button>
+                  </Link>
+                  
+                  <button 
+                    onClick={handleLogout}
+                    className="w-full text-left px-4 py-2 text-xs text-red-600 hover:bg-red-50 transition-colors font-semibold flex items-center gap-2 border-t border-slate-100 mt-1 pt-2"
+                  >
+                    <LogOut className="w-4 h-4 text-red-500" />
+                    Logout
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </header>
+
+        {/* Scrollable Main Screen Content Area */}
+        <main className="flex-1 overflow-y-auto bg-slate-50 p-6 md:p-8">
+          {children}
+        </main>
+      </div>
     </div>
   )
 }

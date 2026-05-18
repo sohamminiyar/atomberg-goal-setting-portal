@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
 import { 
   CheckCircle, 
   RotateCcw, 
@@ -39,6 +40,7 @@ function ApprovalsContent() {
   const [employees, setEmployees] = useState<any[]>([])
   const [selectedEmployee, setSelectedEmployee] = useState<any | null>(null)
   const [goals, setGoals] = useState<Goal[]>([])
+  const [selectedGoalIds, setSelectedGoalIds] = useState<string[]>([])
   const [isReworkModalOpen, setIsReworkModalOpen] = useState(false)
   const [reworkComment, setReworkComment] = useState('')
 
@@ -95,9 +97,27 @@ function ApprovalsContent() {
         .eq('employee_id', employee.id)
         .eq('status', 'pending_approval')
       
-      setGoals(data || [])
+      const fetchedGoals = data || []
+      setGoals(fetchedGoals)
+      setSelectedGoalIds(fetchedGoals.map(g => g.id))
     } catch (error) {
       toast.error('Failed to load goals for review')
+    }
+  }
+
+  const toggleGoalSelection = (goalId: string) => {
+    setSelectedGoalIds(prev => 
+      prev.includes(goalId) 
+        ? prev.filter(id => id !== goalId) 
+        : [...prev, goalId]
+    )
+  }
+
+  const toggleSelectAll = () => {
+    if (selectedGoalIds.length === goals.length) {
+      setSelectedGoalIds([])
+    } else {
+      setSelectedGoalIds(goals.map(g => g.id))
     }
   }
 
@@ -105,7 +125,12 @@ function ApprovalsContent() {
     setGoals(prev => prev.map(g => g.id === id ? { ...g, [field]: value } : g))
   }
 
-  const handleApproveAll = async () => {
+  const handleApproveSelected = async () => {
+    if (selectedGoalIds.length === 0) {
+      toast.error('Please select at least one goal to approve')
+      return
+    }
+
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
@@ -113,7 +138,7 @@ function ApprovalsContent() {
       const { error } = await supabase
         .from('goals')
         .update({ status: 'approved', locked: true })
-        .in('id', goals.map(g => g.id))
+        .in('id', selectedGoalIds)
 
       if (error) throw error
 
@@ -123,10 +148,10 @@ function ApprovalsContent() {
         action: 'approve_goals',
         entity_type: 'goal_batch',
         entity_id: selectedEmployee.id,
-        new_value: { goalIds: goals.map(g => g.id) }
+        new_value: { goalIds: selectedGoalIds }
       })
       
-      toast.success('Goals approved successfully')
+      toast.success(`${selectedGoalIds.length} goal(s) approved successfully`)
       setSelectedEmployee(null)
       fetchPendingRequests()
     } catch (error) {
@@ -135,6 +160,10 @@ function ApprovalsContent() {
   }
 
   const handleRequestRework = async () => {
+    if (selectedGoalIds.length === 0) {
+      toast.error('Please select at least one goal for rework')
+      return
+    }
     if (!reworkComment) {
       toast.error('Please provide a reason for rework')
       return
@@ -150,7 +179,7 @@ function ApprovalsContent() {
           status: 'rework_requested', 
           rework_comments: reworkComment 
         })
-        .in('id', goals.map(g => g.id))
+        .in('id', selectedGoalIds)
 
       if (error) throw error
 
@@ -161,10 +190,10 @@ function ApprovalsContent() {
         entity_type: 'goal_batch',
         entity_id: selectedEmployee.id,
         remarks: reworkComment,
-        new_value: { goalIds: goals.map(g => g.id) }
+        new_value: { goalIds: selectedGoalIds }
       })
 
-      toast.success('Rework requested')
+      toast.success(`Rework requested for ${selectedGoalIds.length} goal(s)`)
       setIsReworkModalOpen(false)
       setReworkComment('')
       setSelectedEmployee(null)
@@ -229,38 +258,91 @@ function ApprovalsContent() {
           </div>
         </div>
         <div className="flex gap-3">
-          <Button variant="outline" className="text-orange-600 border-orange-200 hover:bg-orange-50" onClick={() => setIsReworkModalOpen(true)}>
-            <RotateCcw className="w-4 h-4 mr-2" /> Request Rework
+          <Button 
+            variant="outline" 
+            className="text-orange-600 border-orange-200 hover:bg-orange-50 disabled:opacity-50 disabled:cursor-not-allowed" 
+            onClick={() => {
+              if (selectedGoalIds.length === 0) {
+                toast.error('Please select at least one goal for rework')
+                return
+              }
+              setIsReworkModalOpen(true)
+            }}
+            disabled={selectedGoalIds.length === 0}
+          >
+            <RotateCcw className="w-4 h-4 mr-2" /> Request Rework ({selectedGoalIds.length})
           </Button>
-          <Button className="bg-green-600 hover:bg-green-700" onClick={handleApproveAll}>
-            <CheckCircle className="w-4 h-4 mr-2" /> Approve All
+          <Button 
+            className="bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed" 
+            onClick={handleApproveSelected}
+            disabled={selectedGoalIds.length === 0}
+          >
+            <CheckCircle className="w-4 h-4 mr-2" /> Approve Selected ({selectedGoalIds.length})
           </Button>
         </div>
       </div>
 
+      {/* Select All Row */}
+      <div className="flex justify-between items-center bg-slate-50 border border-slate-200 px-5 py-3 rounded-2xl shadow-sm">
+        <label className="flex items-center gap-2.5 cursor-pointer text-xs font-bold text-slate-600 uppercase tracking-wider select-none">
+          <input 
+            type="checkbox"
+            checked={selectedGoalIds.length === goals.length && goals.length > 0}
+            onChange={toggleSelectAll}
+            className="h-4.5 w-4.5 rounded border-slate-300 text-blue-600 focus:ring-[#00288e] cursor-pointer accent-[#00288e]"
+          />
+          Select All Goals ({selectedGoalIds.length} / {goals.length})
+        </label>
+        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+          Select items to approve or request rework
+        </span>
+      </div>
+
       <div className="space-y-4">
-        {goals.map((goal) => (
-          <Card key={goal.id}>
-            <CardHeader className="pb-4">
-              <div className="flex justify-between items-center">
-                <CardTitle className="text-lg">{goal.title}</CardTitle>
-                <div className="flex items-center gap-4">
-                  <div className="text-right">
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Weightage</p>
-                    <div className="flex items-center gap-2">
-                      <Input 
-                        type="number" 
-                        value={goal.weightage}
-                        className="w-16 h-8 text-sm font-bold text-center"
-                        onChange={(e) => handleUpdateGoal(goal.id, 'weightage', parseInt(e.target.value))}
-                      />
-                      <span className="text-sm font-bold text-slate-500">%</span>
+        {goals.map((goal) => {
+          const isSelected = selectedGoalIds.includes(goal.id)
+          return (
+            <Card key={goal.id} className={cn("transition-all duration-200 shadow-sm relative overflow-hidden", isSelected ? "border-blue-200 bg-blue-50/5" : "border-slate-200")}>
+              {/* Highlight bar for selected cards */}
+              {isSelected && <div className="absolute top-0 left-0 w-1 h-full bg-[#00288e]" />}
+              <CardHeader className="pb-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-3.5">
+                    <input 
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => toggleGoalSelection(goal.id)}
+                      className="mt-1 h-4.5 w-4.5 rounded border-slate-300 text-blue-600 focus:ring-[#00288e] cursor-pointer accent-[#00288e]"
+                    />
+                    <div className="space-y-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <CardTitle className="text-lg font-bold text-slate-800">{goal.title}</CardTitle>
+                        {goal.is_shared && (
+                          <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-100 text-[9px] font-extrabold rounded-lg uppercase tracking-wider flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                            Shared KPI
+                          </span>
+                        )}
+                      </div>
+                      <CardDescription className="text-xs text-slate-500 leading-relaxed max-w-2xl">{goal.description}</CardDescription>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="text-right">
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Weightage</p>
+                      <div className="flex items-center gap-2">
+                        <Input 
+                          type="number" 
+                          value={goal.weightage}
+                          className="w-16 h-8 text-sm font-bold text-center bg-slate-50"
+                          onChange={(e) => handleUpdateGoal(goal.id, 'weightage', parseInt(e.target.value))}
+                        />
+                        <span className="text-sm font-bold text-slate-500">%</span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-              <CardDescription>{goal.description}</CardDescription>
-            </CardHeader>
+              </CardHeader>
             <CardContent className="pt-2 border-t border-slate-50">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
                 <div className="space-y-2">
@@ -282,7 +364,7 @@ function ApprovalsContent() {
               </div>
             </CardContent>
           </Card>
-        ))}
+        )})}
       </div>
 
       <Dialog open={isReworkModalOpen} onOpenChange={setIsReworkModalOpen}>
