@@ -2,62 +2,63 @@
 
 > A comprehensive, role-based OKR and Goal Management platform built for seamless organizational alignment, quarterly check-ins, and performance tracking.
 
-## 🌟 Overview
-Built as a highly modular, industry-standard web application, this portal streamlines the entire goal-setting lifecycle. From individual employee OKRs to synchronized Shared KPIs across departments, it provides a centralized hub for tracking progress, managing approvals, and driving organizational success.
+## 🔗 Project Links
+- **Live Deployed Link:** [https://atomberg-goal-setting-portal.vercel.app/](https://atomberg-goal-setting-portal.vercel.app/)
+- **GitHub Repository:** [https://github.com/sohamminiyar/atomberg-goal-setting-portal](https://github.com/sohamminiyar/atomberg-goal-setting-portal)
 
-## 🚀 Key Features
+## A. Project Overview
+This portal streamlines the entire goal-setting lifecycle. It provides an enterprise-grade platform for employees to set goals, managers to approve and track progress, and administrators to oversee the organizational hierarchy. The system exists to bridge the gap between individual performance and organizational objectives, ensuring everyone is aligned.
 
-### 👥 Role-Based Access Control (RBAC)
-Dedicated and secure workspaces tailored to specific organizational roles:
-- **Employee Portal**: Intuitive dashboard for setting OKRs, managing daily/quarterly progress, and submitting check-ins.
-- **Manager Portal**: Team oversight, goal approval workflows, and direct reports performance tracking.
-- **Admin Portal**: Complete organizational hierarchy management, audit logging, and global reporting.
+**Workflow:**
+1. Employee creates goals and OKRs.
+2. Manager reviews, modifies if needed, and approves the goals.
+3. Approved goals are locked.
+4. Employees submit quarterly updates on their progress.
+5. Managers review quarterly progress.
+6. Admins monitor organization-wide analytics and manage user hierarchy.
 
-### 🔗 Shared KPIs & Synchronization
-- **Cross-Functional Alignment**: Goals can be linked as "Shared KPIs" across multiple users.
-- **Data Integrity Governance**: Only the designated Primary Owner can record updates on shared goals. Changes are instantly synchronized to all associated users.
+## B. Features
+- **Role-Based Auth:** Secure and dedicated workspaces for Employees, Managers, and Admins.
+- **Goal Creation:** Intuitive interface for employees to set OKRs and daily/quarterly goals.
+- **Manager Approvals:** Workflow for managers to review, approve, or reject team goals.
+- **Quarterly Tracking:** Seamless check-ins for logging actual achievements and progress.
+- **Admin Hierarchy:** Complete management of organizational structure and manager assignments.
+- **Shared Goals:** Cross-functional alignment through Shared KPIs, synchronized across multiple users.
+- **Audit Logs:** Tracking critical system actions for compliance and transparency.
 
-### 📅 Quarterly Check-ins & Lock Governance
-- **Frictionless Updates**: Seamless interface for logging "Actual Achievements", statuses, and comments.
-- **Smart Dirty Checks**: System automatically detects unsaved changes and prevents accidental data loss.
-- **Submission Lockout**: Once an update is submitted and approved, the goal is securely locked from further editing to maintain audit compliance.
+## C. Tech Stack
 
-### 📊 Dynamic Dashboards & Analytics
-- Real-time data visualization using Recharts.
-- Track goal completion rates, team performance metrics, and pending approval queues at a glance.
+| Technology | Purpose |
+| :--- | :--- |
+| **Next.js** | Frontend Framework |
+| **Supabase** | Backend/Auth/DB |
+| **Tailwind CSS** | Styling |
+| **Shadcn UI** | Components |
 
-## 💻 Tech Stack
+## D. Architecture
+- **Employee Flow:** Access the Employee Portal -> Create Goals -> Wait for Approval -> Log Quarterly Check-ins.
+- **Manager Flow:** Access the Manager Portal -> Review Team Goals -> Approve/Reject -> Monitor Direct Reports' Progress.
+- **Admin Flow:** Access the Admin Portal -> Manage Users & Hierarchy -> Assign Managers -> View Audit Logs & Reports.
 
-### Frontend Architecture
-* **Framework**: [Next.js 16] (App Router, Server Components)
-* **Language**: TypeScript (Strict Mode)
-* **Styling**: Tailwind CSS & shadcn/ui
-* **State Management**: Zustand
-* **Charts**: Recharts
-* **Icons**: Lucide React
+## E. Database Schema
+The system uses a relational PostgreSQL database managed via Supabase.
+- `profiles`: Stores user details, roles, and manager assignments.
+- `goals`: Stores individual employee goals and OKRs.
+- `approvals`: Manages the approval status and workflow for goals.
+- `quarterly_updates`: Tracks progress updates submitted every quarter.
+- `shared_goals`: Manages company-wide or departmental shared KPIs.
+- `audit_logs`: Records critical actions for system transparency.
 
-### Backend & Authentication
-* **Database & Auth**: [Supabase] (PostgreSQL)
-* **Security**: Edge Proxy Middleware (`proxy.ts`) for secure route protection & Row Level Security (RLS)
-* **ORM / Client**: Supabase SSR Client
+## G. Demo Credentials
+Use these credentials to quickly test the application functionality across different roles.
 
-## 📂 Project Structure
-```text
-├── app/                  # Next.js App Router (Pages, Layouts)
-│   ├── admin/            # Admin workspace
-│   ├── employee/         # Employee workspace
-│   ├── manager/          # Manager workspace
-│   └── login/ & signup/  # Authentication views
-├── components/           # Reusable UI components & Feature modules
-│   ├── ui/               # shadcn/ui primitive components
-│   ├── employee/         # Employee-specific components
-│   └── manager/          # Manager-specific components
-├── lib/ & utils/         # Supabase clients, utility functions, auth handling
-├── services/             # Database interaction layer (goals, auth, admin)
-├── store/                # Zustand global state (Notifications, etc.)
-└── types/                # TypeScript interfaces and database schemas
-```
+| Role | Email | Password |
+| :--- | :--- | :--- |
+| **Employee** | employee@test.com | 123456 |
+| **Manager** | manager@test.com | 123456 |
+| **Admin** | admin@test.com | 123456 |
 
+---
 ## 🛠️ Local Development
 
 ### Prerequisites
@@ -74,17 +75,10 @@ Dedicated and secure workspaces tailored to specific organizational roles:
 3. **Environment Variables**: Create a `.env.local` file with your Supabase credentials:
    ```env
    NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your_supabase_publishable_key
    ```
 4. **Run the development server**:
    ```bash
    npm run dev
    ```
 5. **Open** [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-## ☁️ Deployment
-This project is completely modularized and optimized for a flawless deployment on **Vercel**. 
-The Edge Middleware is configured according to the latest standards, ensuring fast, secure authentication routing globally.
-
----
-*Developed as an assignment submission for the Hackathon.*
