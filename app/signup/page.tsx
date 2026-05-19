@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { authService } from '@/services/auth'
 import { UserRole } from '@/types/auth'
-import { Mail, Lock, Eye, EyeOff, UserPlus, User, Shield, Target, Users } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, UserPlus, User, Shield, Target } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { toast } from 'sonner'
 
@@ -19,8 +19,6 @@ export default function SignupPage() {
     password: '',
     role: 'employee' as UserRole,
   })
-  const [managers, setManagers] = useState<{ id: string; full_name: string }[]>([])
-  const [selectedManagerId, setSelectedManagerId] = useState('')
 
   // Redirect already authenticated users away from the auth page
   useEffect(() => {
@@ -42,28 +40,8 @@ export default function SignupPage() {
     checkSession()
   }, [router])
 
-  useEffect(() => {
-    async function loadManagers() {
-      try {
-        const list = await authService.getManagers()
-        setManagers(list)
-        if (list.length > 0) {
-          setSelectedManagerId(list[0].id)
-        }
-      } catch (err) {
-        console.error('Failed to load managers:', err)
-      }
-    }
-    loadManagers()
-  }, [])
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
-    if (formData.role === 'employee' && !selectedManagerId) {
-      toast.error('Please assign a reporting manager to complete registration.')
-      return
-    }
 
     setLoading(true)
 
@@ -72,8 +50,7 @@ export default function SignupPage() {
         formData.email,
         formData.password,
         formData.fullName,
-        formData.role,
-        formData.role === 'employee' ? selectedManagerId : undefined
+        formData.role
       )
       toast.success('Account created successfully!')
       
@@ -104,8 +81,12 @@ export default function SignupPage() {
         
         {/* Branded Content */}
         <div className="relative z-10 px-12 text-center max-w-lg flex flex-col gap-6">
-          <div className="w-16 h-16 bg-[#00288e] rounded-2xl flex items-center justify-center mx-auto shadow-md mb-4 transform hover:scale-105 transition-transform duration-300">
-            <Target className="text-white w-9 h-9" />
+          <div className="w-32 h-16 flex items-center justify-center mx-auto mb-4 transform hover:scale-105 transition-transform duration-300">
+            <img 
+              src="/atomberg.jpg" 
+              alt="Atomberg Logo" 
+              className="w-full h-full object-contain mix-blend-multiply rounded-md"
+            />
           </div>
           <div>
             <h1 className="text-5xl font-extrabold text-[#00288e] mb-4 tracking-tight">AtomQuest</h1>
@@ -117,18 +98,18 @@ export default function SignupPage() {
       {/* Right Side: Authentication Panel */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12">
         {/* Signup Card */}
-        <div className="w-full max-w-[440px] bg-white border border-[#E5E7EB] rounded-2xl p-8 lg:p-10 shadow-sm flex flex-col gap-6">
+        <div className="w-full max-w-[390px] bg-white border border-[#E5E7EB] rounded-2xl p-6 lg:p-8 shadow-sm flex flex-col gap-5">
           {/* Header */}
           <div className="flex flex-col gap-2">
-            <h2 className="text-3xl font-bold tracking-tight text-[#151c27]">Create Account</h2>
-            <p className="text-sm text-[#444653]">Enter your details below to register for the portal.</p>
+            <h2 className="text-2xl font-bold tracking-tight text-[#151c27]">Create Account</h2>
+            <p className="text-xs text-slate-500">Enter your details below to register for the portal.</p>
           </div>
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             {/* Full Name Input */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-semibold text-[#151c27]" htmlFor="fullName">
+              <label className="text-xs font-semibold text-[#151c27]" htmlFor="fullName">
                 Full Name
               </label>
               <div className="relative">
@@ -149,7 +130,7 @@ export default function SignupPage() {
 
             {/* Email Input */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-semibold text-[#151c27]" htmlFor="email">
+              <label className="text-xs font-semibold text-[#151c27]" htmlFor="email">
                 Corporate Email
               </label>
               <div className="relative">
@@ -170,7 +151,7 @@ export default function SignupPage() {
 
             {/* Password Input */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-semibold text-[#151c27]" htmlFor="password">
+              <label className="text-xs font-semibold text-[#151c27]" htmlFor="password">
                 Password
               </label>
               <div className="relative">
@@ -202,7 +183,7 @@ export default function SignupPage() {
 
             {/* Role Select Input */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-semibold text-[#151c27]" htmlFor="role">
+              <label className="text-xs font-semibold text-[#151c27]" htmlFor="role">
                 Select Portal Access Role
               </label>
               <div className="relative">
@@ -217,7 +198,7 @@ export default function SignupPage() {
                     }
                   }}
                 >
-                  <SelectTrigger className="w-full pl-10 pr-4 py-2.5 text-sm border border-[#c4c5d5] rounded-lg bg-white text-[#151c27] focus:outline-none focus:border-[#00288e] focus:ring-1 focus:ring-[#00288e] transition-all justify-start gap-2 h-auto text-left shadow-none">
+                  <SelectTrigger className="w-full pl-10 pr-4 py-0 text-sm border border-[#c4c5d5] rounded-lg bg-white text-[#151c27] focus:outline-none focus:border-[#00288e] focus:ring-1 focus:ring-[#00288e] transition-all justify-start gap-2 !h-[42px] text-left shadow-none flex items-center">
                     <SelectValue placeholder="Select a role" />
                   </SelectTrigger>
                   <SelectContent className="bg-white border border-[#E5E7EB] text-[#151c27]">
@@ -234,45 +215,6 @@ export default function SignupPage() {
                 </Select>
               </div>
             </div>
-
-            {/* Manager Select Input (Only shown if role === 'employee') */}
-            {formData.role === 'employee' && (
-              <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
-                <label className="text-sm font-semibold text-[#151c27]" htmlFor="manager">
-                  Assign Reporting Manager
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10 text-slate-400">
-                    <Users className="w-5 h-5 text-[#757684]" />
-                  </div>
-                  <Select
-                    value={selectedManagerId}
-                    onValueChange={(value) => setSelectedManagerId(value || '')}
-                  >
-                    <SelectTrigger className="w-full pl-10 pr-4 py-2.5 text-sm border border-[#c4c5d5] rounded-lg bg-white text-[#151c27] focus:outline-none focus:border-[#00288e] focus:ring-1 focus:ring-[#00288e] transition-all justify-start gap-2 h-auto text-left shadow-none">
-                      <SelectValue placeholder="Select your reporting manager" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white border border-[#E5E7EB] text-[#151c27]">
-                      {managers.length === 0 ? (
-                        <SelectItem value="none" disabled className="py-2 text-slate-400">
-                          No active managers found
-                        </SelectItem>
-                      ) : (
-                        managers.map((mgr) => (
-                          <SelectItem 
-                            key={mgr.id} 
-                            value={mgr.id} 
-                            className="hover:bg-[#f0f3ff] focus:bg-[#f0f3ff] cursor-pointer py-2"
-                          >
-                            {mgr.full_name}
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            )}
 
             {/* Submit Button */}
             <button

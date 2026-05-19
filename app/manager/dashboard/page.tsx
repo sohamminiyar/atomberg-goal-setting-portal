@@ -29,10 +29,10 @@ async function DashboardContent() {
 
   const teamIds = team?.map(t => t.id) || []
 
-  // Fetch overall goal status for reports
+  // Fetch overall goal details for reports
   const { data: goals } = await supabase
     .from('goals')
-    .select('id, employee_id, status, target, weightage')
+    .select('id, employee_id, status, target, weightage, title, description, thrust_area, uom_type, is_shared, is_primary_owner')
     .in('employee_id', teamIds)
 
   // Fetch active quarter updates for team's goals
@@ -154,17 +154,17 @@ export default function ManagerDashboard() {
   return (
     <div className="p-6 sm:p-8 max-w-7xl mx-auto space-y-6">
       <div className="hidden sm:block">
-        <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">Manager Dashboard</h1>
+        <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight">Manager Dashboard</h1>
         <p className="text-xs text-slate-400">Overview of your team's goal performance and approval requests.</p>
       </div>
       
       <Suspense fallback={
         <div className="flex flex-col gap-6 animate-pulse">
           <div className="h-44 bg-slate-100 rounded-3xl" />
-          <div className="grid grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {[1, 2, 3, 4].map(i => <div key={i} className="h-28 bg-slate-100 rounded-2xl" />)}
           </div>
-          <div className="grid grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div className="h-80 bg-slate-100 rounded-2xl" />
             <div className="h-80 bg-slate-100 rounded-2xl" />
           </div>

@@ -173,8 +173,8 @@ export default function GoalGovernancePage() {
     <div className="space-y-6 animate-in fade-in duration-300">
       {/* Title */}
       <div>
-        <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Goal Governance</h1>
-        <p className="text-sm text-slate-500 mt-1">Audit, unlock, or force approve quarterly goals across organization levels.</p>
+        <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight">Goal Governance</h1>
+        <p className="text-xs text-slate-400 mt-1">Audit, unlock, or force approve quarterly goals across organization levels.</p>
       </div>
 
       {/* Control panel & filter */}

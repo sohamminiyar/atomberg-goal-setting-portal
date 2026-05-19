@@ -346,8 +346,8 @@ export default function AdminSharedGoalsPage() {
               Corporate Operations Master Panel
             </span>
           </div>
-          <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">Shared Departmental KPIs</h1>
-          <p className="text-xs text-slate-500">
+          <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight">Shared Departmental KPIs</h1>
+          <p className="text-xs text-slate-400 mt-1">
             Deploy baseline goals, targets, and parameters directly into multiple employee rosters. Quarterly achievements sync automatically in real-time from the Primary Owner.
           </p>
         </div>

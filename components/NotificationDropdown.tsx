@@ -16,6 +16,7 @@ import {
   ExternalLink
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useNotificationStore } from '@/store/notificationStore'
 
 // Relative time formatting utility
 function formatRelativeTime(isoString: string) {
@@ -68,6 +69,8 @@ export default function NotificationDropdown({ currentUserId, role }: Notificati
   const [readIds, setReadIds] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const dropdownRef = useRef<HTMLDivElement>(null)
+
+  const { setUnreadCount } = useNotificationStore()
 
   // Fetch notifications
   const fetchNotifications = async (isSilent = false) => {
@@ -218,6 +221,11 @@ export default function NotificationDropdown({ currentUserId, role }: Notificati
   }
 
   const unreadCount = notifications.filter(n => !readIds.includes(n.id)).length
+
+  // Sync count to global Zustand store so other UI components can react instantly
+  useEffect(() => {
+    setUnreadCount(unreadCount)
+  }, [unreadCount, setUnreadCount])
 
   // Build beautiful descriptive message and visual styling for each notification
   const getNotificationUI = (item: NotificationItem) => {

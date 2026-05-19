@@ -57,6 +57,7 @@ function ManagerCheckinsContent() {
   const [reports, setReports] = useState<DirectReport[]>([])
   const [selectedReport, setSelectedReport] = useState<DirectReport | null>(null)
   const [goals, setGoals] = useState<GoalWithQuarterlyUpdate[]>([])
+  const [selectedGoalIds, setSelectedGoalIds] = useState<string[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedQuarter, setSelectedQuarter] = useState<QuarterType>('Q1')
   
@@ -121,6 +122,8 @@ function ManagerCheckinsContent() {
           selectedQuarter
         )
         setGoals(reportGoals)
+        // Select all goals by default
+        setSelectedGoalIds(reportGoals.map(g => g.id))
 
         // Initialize manager comments form states
         const initialComments: Record<string, string> = {}
@@ -146,9 +149,32 @@ function ManagerCheckinsContent() {
     }))
   }
 
+  // Toggle single goal selection
+  const toggleGoalSelection = (goalId: string) => {
+    setSelectedGoalIds(prev => 
+      prev.includes(goalId) 
+        ? prev.filter(id => id !== goalId) 
+        : [...prev, goalId]
+    )
+  }
+
+  // Toggle select/deselect all goals
+  const toggleSelectAll = () => {
+    if (selectedGoalIds.length === goals.length) {
+      setSelectedGoalIds([])
+    } else {
+      setSelectedGoalIds(goals.map(g => g.id))
+    }
+  }
+
   // Handle saving manager comments in batch
   const handleSaveReviews = async () => {
     if (!selectedReport) return
+
+    if (selectedGoalIds.length === 0) {
+      toast.error('Please select at least one review to submit.')
+      return
+    }
 
     // Governance: check if selected quarter matches detected system quarter
     const systemQuarter = getCurrentQuarter()
@@ -159,7 +185,8 @@ function ManagerCheckinsContent() {
 
     setSaving(true)
     try {
-      const promises = goals.map(async goal => {
+      const selectedGoals = goals.filter(g => selectedGoalIds.includes(g.id))
+      const promises = selectedGoals.map(async goal => {
         const comment = managerComments[goal.id] || ''
         const update = goal.quarterly_update
 
@@ -179,7 +206,7 @@ function ManagerCheckinsContent() {
       })
 
       await Promise.all(promises)
-      toast.success(`Success! Saved check-in reviews for ${selectedReport.full_name}.`)
+      toast.success(`Success! Saved ${selectedGoalIds.length} check-in review(s) for ${selectedReport.full_name}.`)
       
       // Re-fetch to sync fresh data
       const refreshedGoals = await quarterlyService.getApprovedGoalsAndUpdates(
@@ -234,7 +261,7 @@ function ManagerCheckinsContent() {
   const isQuarterActive = selectedQuarter === systemQuarter
 
   return (
-    <div className="h-full flex flex-col lg:flex-row pb-24">
+    <div className="h-full flex flex-col lg:flex-row pb-8">
       {/* 1. Left Side Panel: Direct Reports Selection (320px width) */}
       <aside className="w-full lg:w-80 bg-white border-b lg:border-b-0 lg:border-r border-slate-200 p-6 flex flex-col h-auto lg:h-[calc(100vh-4rem)] flex-shrink-0">
         <div className="space-y-4 flex-shrink-0">
@@ -345,10 +372,10 @@ function ManagerCheckinsContent() {
                     </span>
                   )}
                 </div>
-                <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight">
+                <h1 className="text-xl font-extrabold text-slate-800 tracking-tight">
                   {getQuarterMonthUpdateLabel(selectedQuarter)}
                 </h1>
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-slate-400">
                   Assess achievements, analyze scores, and write feedback for {selectedReport.full_name}'s locked goals.
                 </p>
               </div>
@@ -363,26 +390,64 @@ function ManagerCheckinsContent() {
               </div>
             </div>
 
-            {/* Quarter Filter Selection Tabs */}
-            <div className="flex gap-2 bg-slate-200/60 p-1.5 rounded-2xl w-full sm:w-fit self-start border border-slate-200/20">
-              {(['Q1', 'Q2', 'Q3', 'Q4'] as QuarterType[]).map(q => {
-                const isActive = selectedQuarter === q
-                const isSystemQ = systemQuarter === q
-                return (
-                  <button
-                    key={q}
-                    onClick={() => setSelectedQuarter(q)}
-                    className={cn(
-                      "px-5 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer",
-                      isActive
-                        ? "bg-white text-blue-600 shadow-sm"
-                        : "text-slate-600 hover:text-slate-900 hover:bg-white/40"
-                    )}
+            {/* Quarter Selection Slider & Actions Row */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              {/* Quarter Filter Selection Tabs */}
+              <div className="flex gap-2 bg-slate-200/60 p-1.5 rounded-2xl w-full sm:w-fit border border-slate-200/20">
+                {(['Q1', 'Q2', 'Q3', 'Q4'] as QuarterType[]).map(q => {
+                  const isActive = selectedQuarter === q
+                  const isSystemQ = systemQuarter === q
+                  return (
+                    <button
+                      key={q}
+                      onClick={() => setSelectedQuarter(q)}
+                      className={cn(
+                        "px-5 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer",
+                        isActive
+                          ? "bg-white text-blue-600 shadow-sm"
+                          : "text-slate-650 hover:text-slate-900 hover:bg-white/40"
+                      )}
+                    >
+                      {q} {isSystemQ && '• Active'}
+                    </button>
+                  )
+                })}
+              </div>
+
+              {/* Action Buttons (Reset Selected & Submit Reviews) */}
+              {isQuarterActive && goals.length > 0 && (
+                <div className="flex items-center gap-2.5">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      // Revert selected input fields to original goal database values
+                      const reverted = { ...managerComments }
+                      goals.forEach(g => {
+                        if (selectedGoalIds.includes(g.id)) {
+                          reverted[g.id] = g.quarterly_update?.manager_comment || ''
+                        }
+                      })
+                      setManagerComments(reverted)
+                      toast.success('Selected reviews reset to database records.')
+                    }}
+                    disabled={saving || selectedGoalIds.length === 0}
+                    className="border-slate-200 text-slate-650 font-bold hover:bg-slate-50 rounded-xl text-xs h-10 shadow-sm"
                   >
-                    {q} {isSystemQ && '• Active'}
-                  </button>
-                )
-              })}
+                    <Undo className="w-4 h-4 mr-1.5" />
+                    Reset Selected
+                  </Button>
+                  <Button
+                    onClick={handleSaveReviews}
+                    disabled={saving || selectedGoalIds.length === 0}
+                    className="bg-[#00288e] hover:bg-[#001f66] text-white font-bold py-2 px-5 rounded-xl text-xs flex items-center gap-2 shadow-sm transition-all hover:scale-[1.01] active:scale-99 h-10 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Save className="w-4 h-4" />
+                    {saving 
+                      ? 'Saving Reviews...' 
+                      : `Submit Reviews (${selectedGoalIds.length})`}
+                  </Button>
+                </div>
+              )}
             </div>
 
             {/* Loader for Goals list */}
@@ -412,192 +477,184 @@ function ManagerCheckinsContent() {
               </div>
             ) : (
               // Approved Goals and Check-ins list
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-                {goals.map((goal, idx) => {
-                  const update = goal.quarterly_update
-                  const commentValue = managerComments[goal.id] || ''
+              <div className="space-y-6">
+                {/* Select All Row */}
+                <div className="flex justify-between items-center bg-white border border-slate-200 px-5 py-3 rounded-2xl shadow-sm">
+                  <label className="flex items-center gap-2.5 cursor-pointer text-xs font-bold text-slate-600 uppercase tracking-wider select-none">
+                    <input 
+                      type="checkbox"
+                      checked={selectedGoalIds.length === goals.length && goals.length > 0}
+                      onChange={toggleSelectAll}
+                      className="h-4.5 w-4.5 rounded border-slate-300 text-blue-600 focus:ring-[#00288e] cursor-pointer accent-[#00288e]"
+                    />
+                    Select All Goals ({selectedGoalIds.length} / {goals.length})
+                  </label>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider hidden sm:inline">
+                    Choose reviews to submit
+                  </span>
+                </div>
 
-                  return (
-                    <div
-                      key={goal.id}
-                      className="bg-white border border-slate-200 rounded-3xl p-6 lg:p-7 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between gap-6 relative overflow-hidden"
-                    >
-                      {/* Top border indicator */}
-                      <div className="absolute top-0 left-0 w-full h-1.5 bg-[#00288e]/10" />
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                  {goals.map((goal, idx) => {
+                    const update = goal.quarterly_update
+                    const commentValue = managerComments[goal.id] || ''
+                    const isSelected = selectedGoalIds.includes(goal.id)
 
-                      {/* Header details */}
-                      <div className="space-y-4">
-                        <div className="flex justify-between items-start gap-4">
-                          <div className="flex items-center gap-3">
-                            <span className="w-8 h-8 rounded-xl bg-blue-50 text-[#00288e] font-extrabold text-xs flex items-center justify-center shadow-sm">
-                              {idx + 1}
-                            </span>
-                            <span className="px-3 py-1 bg-slate-50 border border-slate-100 text-slate-500 font-bold text-[10px] rounded-full uppercase tracking-tight">
-                              {goal.thrust_area}
-                            </span>
-                          </div>
-
-                          <span className="px-3 py-1 rounded-xl text-xs font-extrabold bg-[#f0f3ff] text-[#00288e] border border-[#dce2ff]">
-                            {goal.weightage}% Weight
-                          </span>
-                        </div>
-
-                        <div className="space-y-1">
-                          <h3 className="text-base font-extrabold text-slate-800 leading-snug">{goal.title}</h3>
-                          <p className="text-xs text-slate-500 leading-relaxed">{goal.description}</p>
-                        </div>
-
-                        {/* UOM and Targets details */}
-                        <div className="flex items-center gap-4 bg-slate-50 border border-slate-100 p-3 rounded-2xl">
-                          <div className="flex items-center gap-2">
-                            {getUOMIcon(goal.uom_type)}
-                            <div>
-                              <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">UOM Type</p>
-                              <p className="text-xs font-bold text-slate-700 capitalize">{goal.uom_type}</p>
-                            </div>
-                          </div>
-                          <div className="h-6 w-px bg-slate-200" />
-                          <div>
-                            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Target Value</p>
-                            <p className="text-xs font-extrabold text-slate-850">{goal.target}</p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Employee Check-in Section Display */}
-                      <div className="border-t border-slate-100 pt-5 space-y-4 bg-slate-50/50 p-4 rounded-2xl border border-slate-150">
-                        <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
-                          <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-                          Employee Check-in Details
-                        </h4>
-
-                        {!update ? (
-                          <div className="text-left text-slate-400 flex items-center gap-2 py-1">
-                            <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0" />
-                            <span className="text-xs font-semibold">No progress check-in submitted for this quarter.</span>
-                          </div>
+                    return (
+                      <div
+                        key={goal.id}
+                        className={cn(
+                          "bg-white border rounded-3xl p-6 lg:p-7 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between gap-6 relative overflow-hidden",
+                          isSelected ? "border-blue-200 bg-blue-50/5" : "border-slate-200"
+                        )}
+                      >
+                        {/* Top border indicator */}
+                        {isSelected ? (
+                          <div className="absolute top-0 left-0 w-full h-1.5 bg-[#00288e]" />
                         ) : (
-                          <div className="space-y-3.5">
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Actual Achieved</p>
-                                <p className="text-xs font-extrabold text-slate-800">{update.actual_value || 'None recorded'}</p>
-                              </div>
-                              <div>
-                                <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Employee Status</p>
-                                <span className={cn(
-                                  "inline-block px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase mt-0.5",
-                                  update.status === 'completed' 
-                                    ? "bg-green-50 text-green-700 border border-green-200"
-                                    : update.status === 'on_track'
-                                      ? "bg-blue-50 text-blue-700 border border-blue-200"
-                                      : "bg-slate-100 text-slate-600 border border-slate-200"
-                                )}>
-                                  {update.status.replace('_', ' ')}
-                                </span>
-                              </div>
+                          <div className="absolute top-0 left-0 w-full h-1.5 bg-[#00288e]/10" />
+                        )}
+
+                        {/* Header details */}
+                        <div className="space-y-4">
+                          <div className="flex justify-between items-start gap-4">
+                            <div className="flex items-center gap-3">
+                              <input 
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => toggleGoalSelection(goal.id)}
+                                className="h-4.5 w-4.5 rounded border-slate-300 text-blue-600 focus:ring-[#00288e] cursor-pointer accent-[#00288e]"
+                              />
+                              <span className="w-8 h-8 rounded-xl bg-blue-50 text-[#00288e] font-extrabold text-xs flex items-center justify-center shadow-sm">
+                                {idx + 1}
+                              </span>
+                              <span className="px-3 py-1 bg-slate-50 border border-slate-100 text-slate-500 font-bold text-[10px] rounded-full uppercase tracking-tight">
+                                {goal.thrust_area}
+                              </span>
                             </div>
 
-                            {/* Comment */}
+                            <span className="px-3 py-1 rounded-xl text-xs font-extrabold bg-[#f0f3ff] text-[#00288e] border border-[#dce2ff]">
+                              {goal.weightage}% Weight
+                            </span>
+                          </div>
+
+                          <div className="space-y-1">
+                            <h3 className="text-base font-extrabold text-slate-800 leading-snug">{goal.title}</h3>
+                            <p className="text-xs text-slate-500 leading-relaxed">{goal.description}</p>
+                          </div>
+
+                          {/* UOM and Targets details */}
+                          <div className="flex items-center gap-4 bg-slate-50 border border-slate-100 p-3 rounded-2xl">
+                            <div className="flex items-center gap-2">
+                              {getUOMIcon(goal.uom_type)}
+                              <div>
+                                <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">UOM Type</p>
+                                <p className="text-xs font-bold text-slate-700 capitalize">{goal.uom_type}</p>
+                              </div>
+                            </div>
+                            <div className="h-6 w-px bg-slate-200" />
                             <div>
-                              <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Employee Comment</p>
-                              <div className="bg-white border border-slate-150 rounded-xl p-3 text-xs text-slate-650 leading-relaxed italic mt-1 shadow-sm">
-                                "{update.employee_comment || 'No comments provided.'}"
-                              </div>
-                            </div>
-
-                            {/* Progress bar */}
-                            <div className="border-t border-slate-100 pt-3 flex items-center justify-between gap-3">
-                              <div className="flex items-center gap-1.5">
-                                <TrendingUp className="w-4 h-4 text-blue-500 flex-shrink-0" />
-                                <span className="text-[10px] font-bold text-slate-500">Achievement Score:</span>
-                                <span className={cn("text-xs font-extrabold", getProgressColor(update.progress_score))}>
-                                  {update.progress_score}%
-                                </span>
-                              </div>
-
-                              <div className="w-36 bg-slate-150 h-1.5 rounded-full overflow-hidden">
-                                <div
-                                  className={cn(
-                                    "h-full transition-all duration-300",
-                                    update.progress_score >= 100 ? "bg-emerald-500" : "bg-blue-500"
-                                  )}
-                                  style={{ width: `${Math.min(update.progress_score, 100)}%` }}
-                                />
-                              </div>
+                              <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Target Value</p>
+                              <p className="text-xs font-extrabold text-slate-850">{goal.target}</p>
                             </div>
                           </div>
-                        )}
-                      </div>
+                        </div>
 
-                      {/* Manager Feedback Textarea */}
-                      <div className="border-t border-slate-100 pt-5 space-y-2">
-                        <label className="text-xs font-bold text-slate-800 uppercase tracking-wide flex items-center gap-1.5">
-                          <MessageCircle className="w-4 h-4 text-blue-600" />
-                          Manager Review Comments
-                        </label>
-                        <Textarea
-                          placeholder="Provide performance feedback, recommendations, or note achievements on this goal."
-                          value={commentValue}
-                          onChange={(e) => handleCommentChange(goal.id, e.target.value)}
-                          disabled={!isQuarterActive || saving}
-                          rows={3}
-                          className="border-slate-200 focus:border-[#00288e] focus:ring-[#00288e] rounded-xl text-sm text-[#151c27] resize-none placeholder:text-xs placeholder:text-slate-400/50 disabled:bg-slate-50 disabled:text-slate-500"
-                        />
-                        {!isQuarterActive && (
-                          <p className="text-[10px] text-slate-400 italic">
-                            Comments are locked for read-only outside the active quarter check-in window.
-                          </p>
-                        )}
+                        {/* Employee Check-in Section Display */}
+                        <div className="border-t border-slate-100 pt-5 space-y-4 bg-slate-50/50 p-4 rounded-2xl border border-slate-150">
+                          <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+                            <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+                            Employee Check-in Details
+                          </h4>
+
+                          {!update ? (
+                            <div className="text-left text-slate-400 flex items-center gap-2 py-1">
+                              <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                              <span className="text-xs font-semibold">No progress check-in submitted for this quarter.</span>
+                            </div>
+                          ) : (
+                            <div className="space-y-3.5">
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Actual Achieved</p>
+                                  <p className="text-xs font-extrabold text-slate-800">{update.actual_value || 'None recorded'}</p>
+                                </div>
+                                <div>
+                                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Employee Status</p>
+                                  <span className={cn(
+                                    "inline-block px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase mt-0.5",
+                                    update.status === 'completed' 
+                                      ? "bg-green-50 text-green-700 border border-green-200"
+                                      : update.status === 'on_track'
+                                        ? "bg-blue-50 text-blue-700 border border-blue-200"
+                                        : "bg-slate-100 text-slate-600 border border-slate-200"
+                                  )}>
+                                    {update.status.replace('_', ' ')}
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Comment */}
+                              <div>
+                                <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Employee Comment</p>
+                                <div className="bg-white border border-slate-150 rounded-xl p-3 text-xs text-slate-650 leading-relaxed italic mt-1 shadow-sm">
+                                  "{update.employee_comment || 'No comments provided.'}"
+                                </div>
+                              </div>
+
+                              {/* Progress bar */}
+                              <div className="border-t border-slate-100 pt-3 flex items-center justify-between gap-3">
+                                <div className="flex items-center gap-1.5">
+                                  <TrendingUp className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                                  <span className="text-[10px] font-bold text-slate-500">Achievement Score:</span>
+                                  <span className={cn("text-xs font-extrabold", getProgressColor(update.progress_score))}>
+                                    {update.progress_score}%
+                                  </span>
+                                </div>
+
+                                <div className="w-36 bg-slate-150 h-1.5 rounded-full overflow-hidden">
+                                  <div
+                                    className={cn(
+                                      "h-full transition-all duration-300",
+                                      update.progress_score >= 100 ? "bg-emerald-500" : "bg-blue-500"
+                                    )}
+                                    style={{ width: `${Math.min(update.progress_score, 100)}%` }}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Manager Feedback Textarea */}
+                        <div className="border-t border-slate-100 pt-5 space-y-2">
+                          <label className="text-xs font-bold text-slate-800 uppercase tracking-wide flex items-center gap-1.5">
+                            <MessageCircle className="w-4 h-4 text-blue-600" />
+                            Manager Review Comments
+                          </label>
+                          <Textarea
+                            placeholder="Provide performance feedback, recommendations, or note achievements on this goal."
+                            value={commentValue}
+                            onChange={(e) => handleCommentChange(goal.id, e.target.value)}
+                            disabled={!isQuarterActive || saving}
+                            rows={3}
+                            className="border-slate-200 focus:border-[#00288e] focus:ring-[#00288e] rounded-xl text-sm text-[#151c27] resize-none placeholder:text-xs placeholder:text-slate-400/50 disabled:bg-slate-50 disabled:text-slate-500"
+                          />
+                          {!isQuarterActive && (
+                            <p className="text-[10px] text-slate-400 italic">
+                              Comments are locked for read-only outside the active quarter check-in window.
+                            </p>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  )
-                })}
+                    )
+                  })}
+                </div>
               </div>
             )}
           </>
         )}
       </section>
-
-      {/* Floating Bottom Action Bar for Batch Save */}
-      {selectedReport && goals.length > 0 && isQuarterActive && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-6 py-4 z-40 shadow-[0_-8px_30px_rgb(0,0,0,0.06)] flex items-center justify-between">
-          <div className="max-w-7xl mx-auto w-full flex items-center justify-between gap-4">
-            <span className="text-[10px] sm:text-xs text-slate-400 font-semibold flex items-center gap-1.5">
-              <Sparkles className="w-4.5 h-4.5 text-blue-500 flex-shrink-0" />
-              Submit checks and feedback comments for {selectedReport.full_name}.
-            </span>
-
-            <div className="flex items-center gap-3">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  // Revert input fields to original goal database values
-                  const reverted: Record<string, string> = {}
-                  goals.forEach(g => {
-                    reverted[g.id] = g.quarterly_update?.manager_comment || ''
-                  })
-                  setManagerComments(reverted)
-                  toast.success('Reviews reset to database records.')
-                }}
-                disabled={saving}
-                className="border-slate-200 text-slate-600 font-bold hover:bg-slate-50 rounded-xl text-xs h-10"
-              >
-                <Undo className="w-4 h-4 mr-1.5" />
-                Reset
-              </Button>
-              <Button
-                onClick={handleSaveReviews}
-                disabled={saving}
-                className="bg-[#00288e] hover:bg-[#001f66] text-white font-bold py-2 px-5 rounded-xl text-xs flex items-center gap-2 shadow-md transition-all hover:scale-[1.01] active:scale-99 h-10"
-              >
-                <Save className="w-4 h-4" />
-                {saving ? 'Saving Reviews...' : `Submit ${selectedQuarter} Reviews`}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

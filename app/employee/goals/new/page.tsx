@@ -7,6 +7,7 @@ import { goalService } from '@/services/goals'
 import { authService } from '@/services/auth'
 import { createClient } from '@/utils/supabase/client'
 import { cn } from '@/lib/utils'
+import { useGoalDraftStore } from '@/store/goalDraftStore'
 import { Goal, GoalFormData, UOMType } from '@/types/goals'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -57,18 +58,17 @@ function GoalSetForm() {
   const [customThrust, setCustomThrust] = useState('')
   const [isEditMode, setIsEditMode] = useState(false)
 
-  // Core Goal Form State
-  const [formData, setFormData] = useState<GoalFormData>({
-    title: '',
-    description: '',
-    weightage: 10,
-    target: '',
-    thrust_area: 'Operational Excellence',
-    uom_type: 'numeric',
-    is_shared: false,
-    is_primary_owner: false,
-    shared_goal_id: null
-  })
+  // Core Goal Form State with Zustand Autosaving
+  const { activeDraft: formData, updateDraft, clearDraft } = useGoalDraftStore()
+
+  // Wrapper for seamless compatibility with existing JSX handlers
+  const setFormData = (updater: Partial<GoalFormData> | ((prev: GoalFormData) => Partial<GoalFormData>)) => {
+    if (typeof updater === 'function') {
+      updateDraft(updater(formData))
+    } else {
+      updateDraft(updater)
+    }
+  }
 
   useEffect(() => {
     const init = async () => {
@@ -155,17 +155,7 @@ function GoalSetForm() {
 
   // Quick reset form handler
   const handleResetForm = () => {
-    setFormData({ 
-      title: '', 
-      description: '', 
-      weightage: 10, 
-      target: '',
-      thrust_area: 'Operational Excellence',
-      uom_type: 'numeric',
-      is_shared: false,
-      is_primary_owner: false,
-      shared_goal_id: null
-    })
+    clearDraft()
     setCustomThrust('')
     setIsEditMode(false)
     router.replace('/employee/goals/new')
@@ -289,9 +279,9 @@ function GoalSetForm() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">Set Your Goals</h1>
+            <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight">Set Your Goals</h1>
           </div>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-slate-400 mt-1">
             Define, balance, and align your target goals to complete your performance profile for FY 2026.
           </p>
         </div>

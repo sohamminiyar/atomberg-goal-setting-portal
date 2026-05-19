@@ -208,7 +208,7 @@ function ApprovalsContent() {
   if (!selectedEmployee) {
     return (
       <div className="space-y-6">
-        <h1 className="text-3xl font-bold text-slate-900">Pending Approvals</h1>
+        <h1 className="text-2xl font-bold text-slate-900">Pending Approvals</h1>
         {employees.length === 0 ? (
           <div className="bg-white p-12 rounded-xl border border-dashed text-center">
             <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-4" />
@@ -253,8 +253,8 @@ function ApprovalsContent() {
             {selectedEmployee.full_name?.charAt(0)}
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">{selectedEmployee.full_name}</h1>
-            <p className="text-slate-500">Reviewing Goal Submission</p>
+            <h1 className="text-xl font-bold text-slate-900">{selectedEmployee.full_name}</h1>
+            <p className="text-xs text-slate-400">Reviewing Goal Submission</p>
           </div>
         </div>
         <div className="flex gap-3">
@@ -397,7 +397,7 @@ function ApprovalsContent() {
 
 export default function PendingApprovalsPage() {
   return (
-    <div className="p-8 max-w-5xl mx-auto">
+    <div className="p-8 max-w-7xl mx-auto">
       <Suspense fallback={<div>Loading...</div>}>
         <ApprovalsContent />
       </Suspense>

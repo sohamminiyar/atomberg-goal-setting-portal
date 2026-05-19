@@ -161,8 +161,8 @@ export default function HierarchyWorkspacePage() {
     <div className="space-y-8 animate-in fade-in duration-300">
       {/* Title block */}
       <div>
-        <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Hierarchy Workspace</h1>
-        <p className="text-sm text-slate-500 mt-1">Configure reporting structure and assign direct reports to corporate managers.</p>
+        <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight">Hierarchy Workspace</h1>
+        <p className="text-xs text-slate-400 mt-1">Configure reporting structure and assign direct reports to corporate managers.</p>
       </div>
 
       {/* Workspace split columns mapper */}

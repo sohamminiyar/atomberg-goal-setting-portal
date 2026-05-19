@@ -370,8 +370,8 @@ export default function ManagerSharedGoalsPage() {
               Team Operations Master Panel
             </span>
           </div>
-          <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">Shared Team KPIs</h1>
-          <p className="text-xs text-slate-500">
+          <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight">Shared Team KPIs</h1>
+          <p className="text-xs text-slate-400">
             Deploy common department goals and parameters to your direct reports. Quarterly achievements sync automatically from the designated Primary Owner.
           </p>
         </div>

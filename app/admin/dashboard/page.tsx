@@ -70,8 +70,8 @@ export default function AdminDashboard() {
       {/* Title Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">System Overview</h1>
-          <p className="text-sm text-slate-500 mt-1">Real-time indicators, operational states, and cycles monitor.</p>
+          <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight">System Overview</h1>
+          <p className="text-xs text-slate-400 mt-1">Real-time indicators, operational states, and cycles monitor.</p>
         </div>
         <button
           onClick={loadData}

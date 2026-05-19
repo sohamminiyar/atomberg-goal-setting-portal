@@ -13,6 +13,7 @@ export const metadata: Metadata = {
   description: "Real-time Goal Setting and Quarterly Tracking Portal",
 };
 
+import { Suspense } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
@@ -28,7 +29,9 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col font-sans">
         <TooltipProvider>
-          {children}
+          <Suspense fallback={null}>
+            {children}
+          </Suspense>
         </TooltipProvider>
         <Toaster position="top-right" />
       </body>

@@ -84,8 +84,12 @@ export default function LoginPage() {
         
         {/* Branded Content */}
         <div className="relative z-10 px-12 text-center max-w-lg flex flex-col gap-6">
-          <div className="w-16 h-16 bg-[#00288e] rounded-2xl flex items-center justify-center mx-auto shadow-md mb-4 transform hover:scale-105 transition-transform duration-300">
-            <Target className="text-white w-9 h-9" />
+          <div className="w-32 h-16 flex items-center justify-center mx-auto mb-4 transform hover:scale-105 transition-transform duration-300">
+            <img 
+              src="/atomberg.jpg" 
+              alt="Atomberg Logo" 
+              className="w-full h-full object-contain mix-blend-multiply rounded-md"
+            />
           </div>
           <div>
             <h1 className="text-5xl font-extrabold text-[#00288e] mb-4 tracking-tight">AtomQuest</h1>
@@ -97,18 +101,18 @@ export default function LoginPage() {
       {/* Right Side: Authentication Panel */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12">
         {/* Login Card */}
-        <div className="w-full max-w-[440px] bg-white border border-[#E5E7EB] rounded-2xl p-8 lg:p-10 shadow-sm flex flex-col gap-6">
+        <div className="w-full max-w-[390px] bg-white border border-[#E5E7EB] rounded-2xl p-6 lg:p-8 shadow-sm flex flex-col gap-5">
           {/* Header */}
           <div className="flex flex-col gap-2">
-            <h2 className="text-3xl font-bold tracking-tight text-[#151c27]">Sign in to AtomQuest</h2>
-            <p className="text-sm text-[#444653]">Enter your credentials to access your goal setting dashboard.</p>
+            <h2 className="text-2xl font-bold tracking-tight text-[#151c27]">Sign in to AtomQuest</h2>
+            <p className="text-xs text-slate-500">Enter your credentials to access your goal setting dashboard.</p>
           </div>
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             {/* Email Input */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-semibold text-[#151c27]" htmlFor="email">
+              <label className="text-xs font-semibold text-[#151c27]" htmlFor="email">
                 Corporate Email
               </label>
               <div className="relative">
@@ -130,7 +134,7 @@ export default function LoginPage() {
             {/* Password Input */}
             <div className="flex flex-col gap-1.5">
               <div className="flex justify-between items-center">
-                <label className="text-sm font-semibold text-[#151c27]" htmlFor="password">
+                <label className="text-xs font-semibold text-[#151c27]" htmlFor="password">
                   Password
                 </label>
                 <Link

@@ -131,9 +131,14 @@ function ClockIcon(props: any) {
 export default function EmployeeDashboard() {
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8">
-      <div className="flex items-center gap-2.5">
-        <LayoutDashboard className="w-8 h-8 text-blue-600" />
-        <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">Employee Dashboard</h1>
+      <div className="flex items-center gap-3">
+        <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
+          <LayoutDashboard className="w-6 h-6" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight">Employee Dashboard</h1>
+          <p className="text-xs text-slate-400 mt-0.5">Monitor your goal sheets, check-ins, and performance statistics.</p>
+        </div>
       </div>
       <Suspense fallback={<div className="h-96 w-full bg-slate-100 animate-pulse rounded-2xl border border-slate-200" />}>
         <DashboardContent />
