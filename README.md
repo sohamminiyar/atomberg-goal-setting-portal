@@ -5,7 +5,7 @@
 ## 🔗 Project Links
 - **Live Deployed Link:** [https://atomberg-goal-setting-portal.vercel.app/](https://atomberg-goal-setting-portal.vercel.app/)
 - **GitHub Repository:** [https://github.com/sohamminiyar/atomberg-goal-setting-portal](https://github.com/sohamminiyar/atomberg-goal-setting-portal)
-- - **Project Document:** [https://docs.google.com/document/d/1nz_8v3eObpdJHXeYEv9iXEC0uBAedRVO/edit?usp=drive_link&ouid=106077840430437701213&rtpof=true&sd=true](https://docs.google.com/document/d/1nz_8v3eObpdJHXeYEv9iXEC0uBAedRVO/edit?usp=drive_link&ouid=106077840430437701213&rtpof=true&sd=true)
+- **Project Document:** [https://tinyurl.com/yzyf77xv](https://tinyurl.com/yzyf77xv)
 
 ## A. Project Overview
 This portal streamlines the entire goal-setting lifecycle. It provides an enterprise-grade platform for employees to set goals, managers to approve and track progress, and administrators to oversee the organizational hierarchy. The system exists to bridge the gap between individual performance and organizational objectives, ensuring everyone is aligned.
